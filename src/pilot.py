@@ -7,6 +7,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import cross_validate
 from sklearn.compose import make_column_selector as selector
+from sklearn.impute import MissingIndicator
+from sklearn.impute import SimpleImputer
 
 data = pd.read_csv('../data/LISS_example_input_data.csv', encoding='cp1252')
 outcome = pd.read_csv('../data/LISS_example_groundtruth_data.csv')
@@ -82,6 +84,9 @@ preprocessor = ColumnTransformer(
 model = make_pipeline(preprocessor,LogisticRegression(max_iter=500))
 # replace income by income categories if not available?
 
+# marking na values
+indicator = MissingIndicator()
+mask_missing_values_only = indicator.fit_transform(X)
 cross_validate(model,data,outcome,cv = 5)
 
 

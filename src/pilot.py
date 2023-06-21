@@ -85,8 +85,17 @@ model = make_pipeline(preprocessor,LogisticRegression(max_iter=500))
 # replace income by income categories if not available?
 
 # marking na values
-indicator = MissingIndicator()
-mask_missing_values_only = indicator.fit_transform(X)
-cross_validate(model,data,outcome,cv = 5)
+
+# Create the object flagging missing values.
+missing_values = MissingIndicator()
+flags = missing_values.fit_transform(data)
+# Get the feature names for the flags (columns spelled 'missing' + column name).
+flag_names = missing_values.get_feature_names_out() 
+# Create a new DataFrame with the flags.
+flagged_df = pd.DataFrame(flags, columns=flag_names, index = data.index.copy())
+# Concatenate the original DataFrame and the flagged DataFrame.
+data = pd.concat([data, flagged_df], axis=1)
+
+#cross_validate(model,data,outcome,cv = 5)
 
 

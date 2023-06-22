@@ -65,15 +65,27 @@ data = data.loc[:,['leeftijd2019',
           'herkomstgroep2019',
           'simpc2019']]
 
-
+# Selecting categorical columns.
 categorical_columns_selector = selector(dtype_include = object)
+# Getting the names of the categorical columns.
 categorical_columns = categorical_columns_selector(data)
+# Encoding the categorical columns.
+encoder = OneHotEncoder(handle_unknown='ignore')
 
+# Selecting numerical columns.
 numerical_columns_selector = selector(dtype_include = "float64")
+# Getting the name of the numerical columns.
 numerical_columns = numerical_columns_selector(data)
-
-encoder = OneHotEncoder(handle_unknown='ignore', drop = 'first')
+# Scaling numerical columns.
 scaler = StandardScaler()
+
+# Create the object flagging missing values.
+missing_values = MissingIndicator()
+# Flagging na values.
+flags = missing_values.fit_transform(data)
+# Get the feature names for the flags (columns spelled 'missing' + column name).
+flag_names = missing_values.get_feature_names_out() 
+
 preprocessor = ColumnTransformer(
     [
         ('on-hot-encoder',encoder,categorical_columns),
@@ -84,13 +96,7 @@ preprocessor = ColumnTransformer(
 model = make_pipeline(preprocessor,LogisticRegression(max_iter=500))
 # replace income by income categories if not available?
 
-# marking na values
 
-# Create the object flagging missing values.
-missing_values = MissingIndicator()
-flags = missing_values.fit_transform(data)
-# Get the feature names for the flags (columns spelled 'missing' + column name).
-flag_names = missing_values.get_feature_names_out() 
 # Create a new DataFrame with the flags.
 flagged_df = pd.DataFrame(flags, columns=flag_names, index = data.index.copy())
 # Concatenate the original DataFrame and the flagged DataFrame.

@@ -1,4 +1,5 @@
 
+import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
@@ -82,14 +83,19 @@ scaler = StandardScaler()
 # Create the object flagging missing values.
 missing_values = MissingIndicator()
 # Flagging na values.
-flags = missing_values.fit_transform(data)
+#flags = missing_values.fit_transform(data)
 # Get the feature names for the flags (columns spelled 'missing' + column name).
-flag_names = missing_values.get_feature_names_out() 
+names_columns_missing = missing_values.get_feature_names_out() 
+
+# Imputing missing values.
+# Maybe consider add_indicator = True to replace the MissingIndicator object.
+imputer = SimpleImputer(missing_values=np.nan, strategy='mean', fill_value=True)
 
 preprocessor = ColumnTransformer(
     [
         ('on-hot-encoder',encoder,categorical_columns),
         ('standard_scaler',scaler,numerical_columns),
+        ('missing_data',missing_values,names_columns_missing)
     ]
 )
 
@@ -98,9 +104,9 @@ model = make_pipeline(preprocessor,LogisticRegression(max_iter=500))
 
 
 # Create a new DataFrame with the flags.
-flagged_df = pd.DataFrame(flags, columns=flag_names, index = data.index.copy())
+#flagged_df = pd.DataFrame(flags, columns=flag_names, index = data.index.copy())
 # Concatenate the original DataFrame and the flagged DataFrame.
-data = pd.concat([data, flagged_df], axis=1)
+#data = pd.concat([data, flagged_df], axis=1)
 
 #cross_validate(model,data,outcome,cv = 5)
 

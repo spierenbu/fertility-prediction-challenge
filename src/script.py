@@ -24,6 +24,20 @@ import sys
 import argparse
 import pandas as pd
 
+# Classifier imports
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.compose import ColumnTransformer
+from sklearn.compose import make_column_selector as selector
+from sklearn.metrics import classification_report
+from sklearn.metrics import RocCurveDisplay
+import pylab as plt
+import numpy as np
+from joblib import dump, load
+
 parser = argparse.ArgumentParser(description="Process and score data.")
 subparsers = parser.add_subparsers(dest="command")
 
@@ -54,7 +68,38 @@ def predict_outcomes(df):
     # they did.
     
     # Add your method here instead of the line below, which is just a dummy example.
-    df["prediction"] = df["year"] % 2
+    # An example of a preprocessing apart from the pipeline
+
+    # Select predictors: education, year of birth, gender, number of children in the household 
+    # You can do this automatically (not necessarily better): https://scikit-learn.org/stable/modules/feature_selection.html
+    keepcols = ['oplmet2019', 'gebjaar', 'geslacht', 'aantalki2019']
+    data = data.loc[:, keepcols]
+
+
+    X_train, X_test, y_train, y_test = train_test_split(data,
+                                                        outcome,
+                                                        test_size=0.2, random_state=2023)
+    y_train = y_train["new_child"]
+    y_test = y_test["new_child"]
+
+    dict_kids = {'None': 0, 'One child': 1, 'Two children': 2, 'Three children': 3, 'Four children': 4, 'Five children': 5, 'Six children': 6}
+    X_train["aantalki2019"] = X_train["aantalki2019"].map(dict_kids)
+
+    # Create transformers
+    # Imputer are sometimes not necessary
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='most_frequent')),
+        ('encoder', OneHotEncoder(handle_unknown='infrequent_if_exist', min_frequency=50))])
+
+    numerical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy="mean")),
+        ('scaler', StandardScaler())])
+
+    # Use ColumnTransformer to apply the transformations to the correct columns in the dataframe
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numerical_transformer, selector(dtype_exclude=object)(X_train)),
+            ('cat', categorical_transformer, selector(dtype_include=object)(X_train))])
     
     return df[["nomem_encr", "prediction"]]
 
